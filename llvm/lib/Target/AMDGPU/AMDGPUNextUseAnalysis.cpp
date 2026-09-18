@@ -2366,7 +2366,7 @@ void printDistanceFromDefToUse(json::OStream &J, const MachineFunction &MF,
 void printNextUseDistancesAsJson(json::OStream &J, const MachineFunction &MF,
                                  const AMDGPUNextUseAnalysis &NUA,
                                  const AMDGPUNextUseAnalysisImpl &NUAImpl,
-                                 const LiveIntervals &LIS) {
+                                 LiveIntervals &LIS) {
   using UseDistancePair = AMDGPUNextUseAnalysis::UseDistancePair;
   const Function &F = MF.getFunction();
   const Module *M = F.getParent();
@@ -2453,8 +2453,7 @@ void printNextUseDistancesAsJson(json::OStream &J, const MachineFunction &MF,
 void printAsJson(raw_ostream &FallbackOS, TimerGroup &JsonTimerGroup,
                  Timer &JsonTimer, const MachineFunction &MF,
                  const AMDGPUNextUseAnalysis &NUA,
-                 const AMDGPUNextUseAnalysisImpl &NUAImpl,
-                 const LiveIntervals &LIS) {
+                 const AMDGPUNextUseAnalysisImpl &NUAImpl, LiveIntervals &LIS) {
   std::string FN = DumpNextUseDistanceAsJson;
 
   auto dump = [&](raw_ostream &OS) {
@@ -2503,7 +2502,7 @@ bool AMDGPUNextUseAnalysisPrinterLegacyPass::runOnMachineFunction(
   Timer JsonTimer("json", "Total time spent generating json", JsonTimerGroup);
   JsonTimer.startTimer();
 
-  const LiveIntervals &LIS = getAnalysis<LiveIntervalsWrapperPass>().getLIS();
+  LiveIntervals &LIS = getAnalysis<LiveIntervalsWrapperPass>().getLIS();
   const AMDGPUNextUseAnalysis &NUA =
       getAnalysis<AMDGPUNextUseAnalysisLegacyPass>().getNextUseAnalysis();
 
@@ -2548,7 +2547,7 @@ AMDGPUNextUseAnalysisPrinterPass::run(MachineFunction &MF,
   Timer JsonTimer("json", "Total time spent generating json", JsonTimerGroup);
   JsonTimer.startTimer();
 
-  const LiveIntervals &LIS = MFAM.getResult<LiveIntervalsAnalysis>(MF);
+  LiveIntervals &LIS = MFAM.getResult<LiveIntervalsAnalysis>(MF);
   const AMDGPUNextUseAnalysis &NUA =
       MFAM.getResult<AMDGPUNextUseAnalysisPass>(MF);
 
