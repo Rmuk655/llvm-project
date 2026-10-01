@@ -53,8 +53,6 @@ using CompiledModelType = RegAllocEvictModel;
 using CompiledModelType = NoopSavedModelImpl;
 #endif
 
-#if defined(LLVM_HAVE_MLIR_LOWERING_REGALLOC)
-constexpr bool HaveMLIRLoweringRegAlloc = true;
 #include "llvm/Analysis/EmitCModelRunner.h"
 #include "llvm/CodeGen/RegAllocEvictModels.h"
 
@@ -89,16 +87,6 @@ createMLGORegAllocModelRunner(LLVMContext &Ctx,
   }
   llvm_unreachable("Unknown MLGO model type!");
 }
-#else
-constexpr bool HaveMLIRLoweringRegAlloc = false;
-enum class MLGORegAllocModelChoice { Default };
-static const MLGORegAllocModelChoice SelectedMLGORegAllocModel =
-    MLGORegAllocModelChoice::Default;
-static inline std::unique_ptr<MLModelRunner>
-createMLGORegAllocModelRunner(LLVMContext &, const std::vector<TensorSpec> &) {
-  return nullptr;
-}
-#endif
 
 static cl::opt<std::string> InteractiveChannelBaseName(
     "regalloc-evict-interactive-channel-base", cl::Hidden,
@@ -414,10 +402,8 @@ public:
   std::unique_ptr<RegAllocEvictionAdvisor>
   getAdvisor(const MachineFunction &MF, const RAGreedy &RA,
              MachineBlockFrequencyInfo *MBFI, MachineLoopInfo *Loops) override {
-    if (!Initialized) {
-      Initialized = true;
-      Runner = createReleaseModeModelRunner<CompiledModelType,
-                                            HaveMLIRLoweringRegAlloc>(
+    if (!Runner) {
+      Runner = createReleaseModeModelRunner<CompiledModelType>(
           MF.getFunction().getContext(), InputFeatures, DecisionName,
           InteractiveChannelBaseName, DecisionSpec,
           createMLGORegAllocModelRunner);
